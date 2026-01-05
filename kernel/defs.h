@@ -62,6 +62,7 @@ void            kinit(void);
 void            krefinc(void *);
 int             krefdec(void *);
 int             krefget(void *);
+uint64          kalloc_count_used(void);
 
 // log.c
 void            initlog(int, struct superblock*);
@@ -192,6 +193,22 @@ uint64          swapin(pagetable_t, uint64);
 int             select_victim_page(void);
 int             pte_to_swapblock(pte_t);
 void            swapfree(int);
+
+// fifo.c
+void            fifoinit(void);
+int             fifo_add(pagetable_t, uint64);
+int             fifo_remove(pagetable_t, uint64);
+int             fifo_get_victim(void);
+
+// memstats.c
+void            memstats_init(void);
+void            memstats_inc_pagefault(void);
+void            memstats_inc_swapin(void);
+void            memstats_inc_swapout(void);
+void            memstats_inc_cowfault(void);
+void            memstats_inc_lazyalloc(void);
+uint64          memstats_get(uint64*, uint64*, uint64*, uint64*, uint64*);
+void            memstats_reset(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -171,3 +171,20 @@ kalloc(void)
   }
   return (void*)r;
 }
+
+// Count number of physical pages currently in use
+uint64
+kalloc_count_used(void)
+{
+  struct run *r;
+  uint64 free_pages = 0;
+  uint64 total_pages;
+  
+  acquire(&kmem.lock);
+  for(r = kmem.freelist; r; r = r->next)
+    free_pages++;
+  release(&kmem.lock);
+  
+  total_pages = (PHYSTOP - KERNBASE) / PGSIZE;
+  return total_pages - free_pages;
+}

@@ -107,3 +107,51 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Get memory statistics
+// Returns physical pages in use, and fills in pointers with stats
+uint64
+sys_get_mem_stats(void)
+{
+  uint64 page_faults, swap_ins, swap_outs, cow_faults, lazy_allocs;
+  uint64 pages_in_use;
+  uint64 addr;
+  struct proc *p = myproc();
+  
+  // Get pointer to stats structure
+  argaddr(0, &addr);
+  
+  // Get statistics
+  pages_in_use = memstats_get(&page_faults, &swap_ins, &swap_outs, 
+                              &cow_faults, &lazy_allocs);
+  
+  // Copy stats to user space
+  struct {
+    uint64 pages_in_use;
+    uint64 page_faults;
+    uint64 swap_ins;
+    uint64 swap_outs;
+    uint64 cow_faults;
+    uint64 lazy_allocs;
+  } stats;
+  
+  stats.pages_in_use = pages_in_use;
+  stats.page_faults = page_faults;
+  stats.swap_ins = swap_ins;
+  stats.swap_outs = swap_outs;
+  stats.cow_faults = cow_faults;
+  stats.lazy_allocs = lazy_allocs;
+  
+  if(copyout(p->pagetable, addr, (char*)&stats, sizeof(stats)) < 0)
+    return -1;
+  
+  return 0;
+}
+
+// Reset memory statistics counters
+uint64
+sys_reset_mem_stats(void)
+{
+  memstats_reset();
+  return 0;
+}

@@ -518,6 +518,8 @@ forkret(void)
     // be run from main().
     fsinit(ROOTDEV);
     swapinit();  // Initialize swap system
+    fifoinit();  // Initialize FIFO page replacement queue
+    memstats_init();  // Initialize memory statistics
 
     first = 0;
     // ensure other cores see first=0.

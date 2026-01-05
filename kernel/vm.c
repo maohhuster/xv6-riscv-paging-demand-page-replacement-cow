@@ -206,6 +206,10 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     if((*pte & PTE_V) == 0 && (*pte & PTE_SWAPPED) == 0)  // not valid and not swapped
       continue;
     if(do_free){
+      // Remove from FIFO queue if it's a user page
+      if((*pte & PTE_U) != 0) {
+        fifo_remove(pagetable, a);
+      }
       if((*pte & PTE_SWAPPED) != 0) {
         // Page is swapped out, free the swap block
         swapblock = pte_to_swapblock(*pte);
@@ -244,6 +248,8 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
       uvmdealloc(pagetable, a, oldsz);
       return 0;
     }
+    // Add to FIFO queue (user page)
+    fifo_add(pagetable, a);
   }
   return newsz;
 }
@@ -528,6 +534,9 @@ vmfault(pagetable_t pagetable, uint64 va, int read)
     kfree((void *)mem);
     return 0;
   }
+  // Add to FIFO queue (user page)
+  fifo_add(pagetable, va);
+  // Note: lazy allocation counter is incremented in trap.c
   return mem;
 }
 
@@ -582,6 +591,9 @@ cowfault(pagetable_t pagetable, uint64 va)
   
   // Decrement reference count of old page
   krefdec((void*)pa);
+  
+  // Add new page to FIFO queue (new user page after COW)
+  fifo_add(pagetable, va);
   
   return 0;
 }
