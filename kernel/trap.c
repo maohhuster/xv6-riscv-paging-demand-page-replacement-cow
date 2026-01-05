@@ -178,8 +178,11 @@ usertrap(void)
                p->sz, p->trapframe->epc);
         
         // Check if epc is suspiciously low or outside process size
-        if(p->trapframe->epc < 0x100) {
-          printf("            ERROR: epc=0x%lx is very low (< 256 bytes)\n", p->trapframe->epc);
+        // For illegal instruction, epc should point to the instruction that caused the fault
+        // If epc is very low, it might indicate corruption
+        if(p->trapframe->epc < 0x100 && p->pid != 1) {
+          printf("            WARNING: epc=0x%lx is very low (< 256 bytes)\n", p->trapframe->epc);
+          printf("            This might indicate instruction pointer corruption\n");
         }
         if(p->trapframe->epc >= p->sz) {
           printf("            ERROR: epc=0x%lx is >= process size 0x%lx\n", 
