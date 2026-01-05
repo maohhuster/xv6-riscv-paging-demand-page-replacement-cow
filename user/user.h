@@ -1,4 +1,6 @@
 #define SBRK_ERROR ((char *)-1)
+#define SBRK_EAGER 1
+#define SBRK_LAZY  2
 
 struct stat;
 
@@ -24,6 +26,8 @@ int getpid(void);
 char* sys_sbrk(int,int);
 int pause(int);
 int uptime(void);
+int get_mem_stats(void*);
+int reset_mem_stats(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

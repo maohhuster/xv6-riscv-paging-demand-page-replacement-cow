@@ -148,6 +148,9 @@ swapout(pagetable_t pagetable, uint64 va)
   // Free the physical page
   kfree((void*)pa);
   
+  // Increment swap-out counter
+  memstats_inc_swapout();
+  
   return 0;
 }
 
@@ -188,40 +191,22 @@ swapin(pagetable_t pagetable, uint64 va)
   uint flags = (*pte & 0x3FF) & ~PTE_SWAPPED;
   *pte = PA2PTE((uint64)pa) | flags | PTE_V;
   
+  // Add to FIFO queue (user page swapped back in)
+  fifo_add(pagetable, va);
+  
+  // Increment swap-in counter
+  memstats_inc_swapin();
+  
   return (uint64)pa;
 }
 
 // Select a victim page to swap out
-// Currently selects first user page found (simple implementation)
+// Uses FIFO algorithm: selects the oldest page (head of FIFO queue)
 // Returns 0 on success, -1 on failure
 int
 select_victim_page(void)
 {
-  struct proc *p;
-  pte_t *pte;
-  uint64 va;
-  
-  // Simple implementation: find first user page in any process
-  for(p = proc; p < &proc[NPROC]; p++) {
-    acquire(&p->lock);
-    if(p->state != UNUSED && p->pagetable != 0) {
-      // Scan user pages
-      for(va = 0; va < p->sz; va += PGSIZE) {
-        if((pte = walk(p->pagetable, va, 0)) != 0 &&
-           (*pte & PTE_V) != 0 &&
-           (*pte & PTE_U) != 0 &&
-           (*pte & PTE_COW) == 0) {
-          // Found a candidate page
-          if(swapout(p->pagetable, va) == 0) {
-            release(&p->lock);
-            return 0;
-          }
-        }
-      }
-    }
-    release(&p->lock);
-  }
-  
-  return -1;
+  // Use FIFO queue to get the oldest page
+  return fifo_get_victim();
 }
 
