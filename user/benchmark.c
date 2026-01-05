@@ -47,15 +47,15 @@ void print_stats(const char *label, uint64 start_time) {
   uint64 elapsed = end_time - start_time;
   
   printf("\n%s Statistics:\n", label);
-  printf("  Execution Time:        %d ticks\n", elapsed);
-  printf("  Physical Pages Used:   %d pages (%.2f MB)\n", 
+  printf("  Execution Time:        %lu ticks\n", elapsed);
+  printf("  Physical Pages Used:   %lu pages (%.2f MB)\n", 
          stats.pages_in_use, stats.pages_in_use * PGSIZE / (1024.0 * 1024.0));
-  printf("  Total Page Faults:     %d\n", stats.page_faults);
-  printf("  - Lazy Allocations:    %d\n", stats.lazy_allocs);
-  printf("  - COW Faults:          %d\n", stats.cow_faults);
-  printf("  - Swap-in Operations:  %d\n", stats.swap_ins);
-  printf("  Swap-out Operations:  %d\n", stats.swap_outs);
-  printf("  Total Disk I/O:        %d operations\n", stats.swap_ins + stats.swap_outs);
+  printf("  Total Page Faults:     %lu\n", stats.page_faults);
+  printf("  - Lazy Allocations:    %lu\n", stats.lazy_allocs);
+  printf("  - COW Faults:          %lu\n", stats.cow_faults);
+  printf("  - Swap-in Operations:  %lu\n", stats.swap_ins);
+  printf("  Swap-out Operations:  %lu\n", stats.swap_outs);
+  printf("  Total Disk I/O:        %lu operations\n", stats.swap_ins + stats.swap_outs);
   
   if(elapsed > 0) {
     printf("  Page Faults/sec:       %.2f\n", (float)stats.page_faults / elapsed);
@@ -142,7 +142,7 @@ void test_sequential_access() {
   uint64 mem_size = USER_RAM_ESTIMATE * 2;
   uint64 num_pages = mem_size / PGSIZE;
   
-  printf("Allocating %d MB (approximately 2x RAM size)...\n", mem_size / (1024 * 1024));
+  printf("Allocating %lu MB (approximately 2x RAM size)...\n", mem_size / (1024 * 1024));
   printf("This will trigger swapping as we access pages.\n\n");
   
   char *mem = sbrklazy(mem_size);
@@ -175,7 +175,7 @@ void test_sequential_access() {
     
     // Progress indicator every 100 pages
     if(i % 100 == 0 && i > 0) {
-      printf("  Processed %d/%d pages (%.1f%%)\n", 
+      printf("  Processed %lu/%lu pages (%.1f%%)\n", 
              i, num_pages, (float)i * 100.0 / num_pages);
     }
   }
@@ -202,7 +202,7 @@ void test_locality_access() {
   const int LOCALITY_SIZE = 10;  // Access 10 pages repeatedly
   const int ITERATIONS = 5;      // Repeat 5 times per locality group
   
-  printf("Allocating %d MB (approximately 2x RAM size)...\n", mem_size / (1024 * 1024));
+  printf("Allocating %lu MB (approximately 2x RAM size)...\n", mem_size / (1024 * 1024));
   printf("Using locality pattern: %d pages per group, %d iterations per group.\n\n", 
          LOCALITY_SIZE, ITERATIONS);
   
@@ -246,7 +246,7 @@ void test_locality_access() {
     
     // Progress indicator
     if(group_start % (LOCALITY_SIZE * 10) == 0 && group_start > 0) {
-      printf("  Processed %d/%d pages (%.1f%%)\n", 
+      printf("  Processed %lu/%lu pages (%.1f%%)\n", 
              group_start, num_pages, (float)group_start * 100.0 / num_pages);
     }
   }
