@@ -243,6 +243,20 @@ prepare_return(void)
   w_sstatus(x);
 
   // set S Exception Program Counter to the saved user pc.
+  // Validate epc before setting sepc
+  if(p->trapframe->epc < 0x100) {
+    printf("prepare_return(): ERROR: epc=0x%lx is very low before return (pid=%d)\n",
+           p->trapframe->epc, p->pid);
+    printf("            Process sz=0x%lx, killing process\n", p->sz);
+    setkilled(p);
+    return;  // Don't return to invalid address
+  }
+  if(p->trapframe->epc >= p->sz) {
+    printf("prepare_return(): ERROR: epc=0x%lx >= process size 0x%lx (pid=%d)\n",
+           p->trapframe->epc, p->sz, p->pid);
+    setkilled(p);
+    return;  // Don't return to invalid address
+  }
   w_sepc(p->trapframe->epc);
 }
 
