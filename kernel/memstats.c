@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "param.h"
 #include "spinlock.h"
-#include "kalloc.h"
+#include "memlayout.h"
 
 // Global memory statistics
 struct {
