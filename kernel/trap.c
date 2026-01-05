@@ -148,6 +148,14 @@ usertrap(void)
       printf("            Page is mapped: pa=0x%lx flags=0x%x\n", pa, flags);
       if((flags & PTE_X) == 0) {
         printf("            ERROR: Page is not executable (PTE_X=0)\n");
+      } else {
+        // Page is executable, but instruction is illegal - check what's at that address
+        uint64 offset = sepc % PGSIZE;
+        uint64 *instr_ptr = (uint64 *)((char *)pa + offset);
+        printf("            Instruction at sepc: 0x%lx (offset=0x%lx in page)\n", 
+               *instr_ptr, offset);
+        printf("            Process sz=0x%lx, epc in trapframe=0x%lx\n", 
+               p->sz, p->trapframe->epc);
       }
     }
     
