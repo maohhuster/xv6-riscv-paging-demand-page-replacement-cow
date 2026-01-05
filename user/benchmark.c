@@ -73,7 +73,6 @@ void test_cow() {
   
   const int NUM_CHILDREN = 20;
   const int ARRAY_SIZE = 1024 * 1024;  // 1MB array per process
-  int pids[NUM_CHILDREN];
   int i, pid;
   
   printf("Allocating %d MB array in parent process...\n", ARRAY_SIZE / (1024 * 1024));
@@ -112,7 +111,6 @@ void test_cow() {
       }
       exit(0);
     }
-    pids[i] = pid;
   }
   
   // Wait for all children
