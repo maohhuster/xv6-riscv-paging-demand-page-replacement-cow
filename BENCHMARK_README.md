@@ -42,13 +42,13 @@ Chương trình benchmark này đánh giá toàn diện 3 cơ chế quản lý b
   - Mỗi trang được swap-out sau khi sử dụng xong
 
 #### Test 3: Locality-Based Memory Access Pattern
-- **Mục đích**: Thấy sự khác biệt về hiệu suất giữa FIFO và LRU
+- **Mục đích**: Kiểm tra hành vi của FIFO với pattern có locality
 - **Thực hiện**:
   - Cấp phát vùng nhớ lớn gấp 2 lần RAM
   - Truy cập theo nhóm: lặp lại 5 lần trên 10 trang, rồi chuyển sang nhóm tiếp theo
 - **Kết quả mong đợi**:
   - FIFO có thể swap-out các trang sẽ được truy cập lại sớm
-  - LRU sẽ hoạt động tốt hơn với pattern này
+  - Điều này cho thấy hành vi của thuật toán FIFO với pattern có locality
 
 ## Cách sử dụng
 
@@ -105,8 +105,8 @@ Chương trình sẽ in ra:
 - **Disk I/O**: Mỗi trang được swap một lần (swap-out khi cần, swap-in khi truy cập)
 
 ### Locality Access
-- **FIFO Limitation**: Có thể swap-out các trang sẽ được truy cập lại
-- **Performance Impact**: Nhiều swap-in/out hơn so với LRU
+- **FIFO Behavior**: Có thể swap-out các trang sẽ được truy cập lại
+- **Performance Impact**: Nhiều swap-in/out hơn do FIFO không nhớ các trang được truy cập gần đây
 
 ## Cấu trúc mã nguồn
 

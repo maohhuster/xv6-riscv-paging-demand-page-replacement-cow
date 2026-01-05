@@ -256,8 +256,8 @@ void test_locality_access() {
   print_stats("Locality Access", start_time);
   
   printf("\nAnalysis: Locality pattern shows how FIFO performs with repeated access.\n");
-  printf("FIFO may swap out pages that will be accessed again soon (not optimal).\n");
-  printf("An LRU algorithm would perform better for this pattern.\n");
+  printf("FIFO may swap out pages that will be accessed again soon.\n");
+  printf("This demonstrates the behavior of FIFO replacement algorithm.\n");
 }
 
 // Main benchmark function
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
   printf("\nKey Insights:\n");
   printf("1. COW significantly reduces memory usage when forking processes.\n");
   printf("2. Sequential access patterns work well with FIFO replacement.\n");
-  printf("3. Locality patterns expose FIFO's limitations (LRU would be better).\n");
+  printf("3. Locality patterns show FIFO's behavior with repeated access.\n");
   printf("4. Swap operations (disk I/O) are the main performance bottleneck.\n");
   print_separator();
   

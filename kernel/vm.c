@@ -311,7 +311,7 @@ uvmfree(pagetable_t pagetable, uint64 sz)
 int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 {
-  pte_t *pte, *newpte;
+  pte_t *pte;
   uint64 pa, i;
   uint flags;
 
@@ -560,7 +560,7 @@ int
 cowfault(pagetable_t pagetable, uint64 va)
 {
   pte_t *pte;
-  uint64 pa, newpa;
+  uint64 pa;
   uint flags;
   char *mem;
 
