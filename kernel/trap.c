@@ -255,21 +255,33 @@ prepare_return(void)
 
   // set S Exception Program Counter to the saved user pc.
   // Validate epc before setting sepc
-  // Only kill if epc is clearly invalid (outside process size)
+  // Only kill if epc is clearly invalid (outside process size or not aligned)
   // Low addresses might be valid for some programs, so just warn
-  if(p->trapframe->epc < 0x100 && p->pid != 1 && p->sz > 0x10000) {
+  uint64 epc = p->trapframe->epc;
+  
+  if(epc < 0x100 && p->pid != 1 && p->sz > 0x10000) {
     printf("prepare_return(): WARNING: epc=0x%lx is very low before return (pid=%d, sz=0x%lx)\n",
-           p->trapframe->epc, p->pid, p->sz);
+           epc, p->pid, p->sz);
     // Don't kill - let it try to execute and see what happens
     // The illegal instruction handler will catch it if it's truly invalid
   }
-  if(p->trapframe->epc >= p->sz) {
+  
+  if(epc >= p->sz) {
     printf("prepare_return(): ERROR: epc=0x%lx >= process size 0x%lx (pid=%d)\n",
-           p->trapframe->epc, p->sz, p->pid);
+           epc, p->sz, p->pid);
     setkilled(p);
     return;  // Don't return to invalid address
   }
-  w_sepc(p->trapframe->epc);
+  
+  // Additional sanity check: epc should be 4-byte aligned for RISC-V
+  if(epc % 4 != 0) {
+    printf("prepare_return(): ERROR: epc=0x%lx is not 4-byte aligned (pid=%d)\n",
+           epc, p->pid);
+    setkilled(p);
+    return;
+  }
+  
+  w_sepc(epc);
 }
 
 // interrupts and exceptions from kernel code go here via kernelvec,
