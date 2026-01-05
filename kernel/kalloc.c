@@ -96,10 +96,10 @@ freerange(void *pa_start, void *pa_end)
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE) {
-    // Initialize ref_count to 0 for pages in freerange
-    // They will be set to 1 when allocated
+    // During initialization, set refcount to 1 so kfree can decrement it
+    // Pages will be properly initialized when allocated via kalloc()
     acquire(&refcount.lock);
-    refcount.count[pageindex(p)] = 0;
+    refcount.count[pageindex(p)] = 1;
     release(&refcount.lock);
     kfree(p);
   }
