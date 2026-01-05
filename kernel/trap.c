@@ -50,13 +50,19 @@ usertrap(void)
   
   // save user program counter.
   uint64 sepc = r_sepc();
-  p->trapframe->epc = sepc;
   
-  // Debug: Check if sepc is suspiciously low
-  if(sepc < 0x100 && r_scause() != 8) {  // Don't warn for system calls (they're normal)
-    printf("usertrap(): WARNING: sepc=0x%lx is very low (pid=%d, scause=0x%lx)\n", 
-           sepc, p->pid, r_scause());
+  // Debug: Check if sepc is suspiciously low BEFORE saving to trapframe
+  // This will help catch when sepc is already corrupted
+  if(sepc < 0x100 && r_scause() != 8 && p->pid != 1) {
+    printf("usertrap(): WARNING: sepc=0x%lx is very low at trap entry (pid=%d, scause=0x%lx, sz=0x%lx)\n", 
+           sepc, p->pid, r_scause(), p->sz);
+    // Check if this matches the epc in trapframe (might indicate corruption)
+    if(p->trapframe->epc == sepc) {
+      printf("            NOTE: trapframe->epc already matches sepc - possible corruption\n");
+    }
   }
+  
+  p->trapframe->epc = sepc;
   
   if(r_scause() == 8){
     // system call
