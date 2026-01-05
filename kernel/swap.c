@@ -148,6 +148,7 @@ swapout(pagetable_t pagetable, uint64 va)
   // Free the physical page
   kfree((void*)pa);
   
+  memstats_inc_swap_out();
   return 0;
 }
 

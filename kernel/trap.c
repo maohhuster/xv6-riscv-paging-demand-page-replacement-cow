@@ -74,31 +74,42 @@ usertrap(void)
     pte_t *pte = walk(p->pagetable, va, 0);
     if(pte != 0 && (*pte & PTE_SWAPPED) != 0) {
       // This is a swapped page fault
+      memstats_inc_swap_in();
       if(swapin(p->pagetable, va) == 0) {
         setkilled(p);
       }
     } else if(pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
       // This is a COW page fault
+      memstats_inc_cow_fault();
       if(cowfault(p->pagetable, va) != 0) {
         setkilled(p);
       }
     } else if(vmfault(p->pagetable, va, 0) != 0) {
       // Lazy allocation page fault
+      memstats_inc_lazy_alloc();
       setkilled(p);
+    } else {
+      memstats_inc_lazy_alloc();
     }
+    memstats_inc_page_fault(0); // Store fault
   } else if(r_scause() == 13) {
     // Load page fault - could be swapped or lazy allocation
     uint64 va = r_stval();
     pte_t *pte = walk(p->pagetable, va, 0);
     if(pte != 0 && (*pte & PTE_SWAPPED) != 0) {
       // This is a swapped page fault
+      memstats_inc_swap_in();
       if(swapin(p->pagetable, va) == 0) {
         setkilled(p);
       }
     } else if(vmfault(p->pagetable, va, 1) != 0) {
       // Lazy allocation page fault
+      memstats_inc_lazy_alloc();
       setkilled(p);
+    } else {
+      memstats_inc_lazy_alloc();
     }
+    memstats_inc_page_fault(1); // Load fault
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());

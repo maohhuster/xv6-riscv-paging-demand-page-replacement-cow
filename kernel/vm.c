@@ -344,6 +344,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       
       // Increment reference count for the shared page
       krefinc((void*)pa);
+      memstats_inc_cow_shared();
     } else {
       // Read-only pages (e.g., text): share them but don't mark as COW
       // since they can't be written to anyway
@@ -351,6 +352,14 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
         goto err;
       // Increment reference count for the shared page
       krefinc((void*)pa);
+      memstats_inc_cow_shared();
+    } else {
+      // Read-only pages: share them but don't mark as COW
+      if(mappages(new, i, PGSIZE, pa, flags) != 0)
+        goto err;
+      // Increment reference count for the shared page
+      krefinc((void*)pa);
+      memstats_inc_cow_shared();
     }
   }
   return 0;

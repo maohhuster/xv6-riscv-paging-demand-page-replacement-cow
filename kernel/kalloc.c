@@ -123,6 +123,8 @@ kfree(void *pa)
   // Only free the page if reference count reaches 0
   if(count > 0)
     return;
+  
+  memstats_inc_pages_freed();
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -168,6 +170,7 @@ kalloc(void)
     acquire(&refcount.lock);
     refcount.count[pageindex(r)] = 1;
     release(&refcount.lock);
+    memstats_inc_pages_allocated();
   }
   return (void*)r;
 }

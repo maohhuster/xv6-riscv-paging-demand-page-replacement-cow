@@ -185,6 +185,19 @@ void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
 
+// memstats.c
+void            memstats_init(void);
+void            memstats_inc_cow_fault(void);
+void            memstats_inc_cow_shared(void);
+void            memstats_inc_swap_out(void);
+void            memstats_inc_swap_in(void);
+void            memstats_inc_page_fault(int);
+void            memstats_inc_lazy_alloc(void);
+void            memstats_inc_pages_allocated(void);
+void            memstats_inc_pages_freed(void);
+void            memstats_get(uint64 *);
+void            memstats_reset(void);
+
 // swap.c
 void            swapinit(void);
 int             swapout(pagetable_t, uint64);

@@ -107,3 +107,22 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Get memory management statistics
+uint64
+sys_memstats(void)
+{
+  uint64 addr;
+  uint64 stats[12];
+  
+  argaddr(0, &addr);
+  
+  // Get statistics
+  memstats_get(stats);
+  
+  // Copy to user space
+  if(copyout(myproc()->pagetable, addr, (char*)stats, sizeof(stats)) < 0)
+    return -1;
+  
+  return 0;
+}
