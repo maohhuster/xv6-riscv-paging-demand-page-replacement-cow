@@ -49,7 +49,14 @@ usertrap(void)
   struct proc *p = myproc();
   
   // save user program counter.
-  p->trapframe->epc = r_sepc();
+  uint64 sepc = r_sepc();
+  p->trapframe->epc = sepc;
+  
+  // Debug: Check if sepc is suspiciously low
+  if(sepc < 0x100 && r_scause() != 8) {  // Don't warn for system calls (they're normal)
+    printf("usertrap(): WARNING: sepc=0x%lx is very low (pid=%d, scause=0x%lx)\n", 
+           sepc, p->pid, r_scause());
+  }
   
   if(r_scause() == 8){
     // system call
