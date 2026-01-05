@@ -98,7 +98,7 @@ usertrap(void)
       }
     }
   } else if(r_scause() == 13) {
-    // Load page fault - could be swapped or lazy allocation
+    // Load page fault - could be swapped, COW, or lazy allocation
     uint64 va = r_stval();
     pte_t *pte = walk(p->pagetable, va, 0);
     if(pte != 0 && (*pte & PTE_SWAPPED) != 0) {
@@ -106,6 +106,19 @@ usertrap(void)
       memstats_inc_pagefault();
       if(swapin(p->pagetable, va) == 0) {
         setkilled(p);
+      }
+    } else if(pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
+      // This is a COW page fault on load (shouldn't happen for read-only, but handle it)
+      // Actually, COW pages are read-only, so load should work. But if it doesn't, handle it.
+      // For now, treat as lazy allocation since COW should only trigger on write
+      uint64 pa = vmfault(p->pagetable, va, 1);
+      if(pa == 0) {
+        // Failed
+        setkilled(p);
+      } else {
+        // Success
+        memstats_inc_pagefault();
+        memstats_inc_lazyalloc();
       }
     } else {
       // Lazy allocation page fault
