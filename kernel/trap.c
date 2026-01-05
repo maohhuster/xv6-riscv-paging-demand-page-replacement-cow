@@ -68,14 +68,16 @@ usertrap(void)
     // but we want to return to the next instruction.
     p->trapframe->epc += 4;
     
-    // Validate epc after increment
-    if(p->trapframe->epc < 0x100) {
-      printf("usertrap(): ERROR: epc=0x%lx is very low after system call (pid=%d, sepc was 0x%lx)\n",
-             p->trapframe->epc, p->pid, sepc);
+    // Validate epc after increment - but don't kill, just warn
+    // The process might legitimately have low addresses in some cases
+    if(p->trapframe->epc < 0x100 && p->sz > 0x10000) {
+      printf("usertrap(): WARNING: epc=0x%lx is very low after system call (pid=%d, sepc was 0x%lx, sz=0x%lx)\n",
+             p->trapframe->epc, p->pid, sepc, p->sz);
     }
     if(p->trapframe->epc >= p->sz) {
       printf("usertrap(): ERROR: epc=0x%lx >= process size 0x%lx after system call (pid=%d)\n",
              p->trapframe->epc, p->sz, p->pid);
+      setkilled(p);
     }
 
     // an interrupt will change sepc, scause, and sstatus,
@@ -244,13 +246,13 @@ prepare_return(void)
 
   // set S Exception Program Counter to the saved user pc.
   // Validate epc before setting sepc
-  // Allow low addresses for init (pid=1) and processes with small sizes (like init)
+  // Only kill if epc is clearly invalid (outside process size)
+  // Low addresses might be valid for some programs, so just warn
   if(p->trapframe->epc < 0x100 && p->pid != 1 && p->sz > 0x10000) {
-    printf("prepare_return(): ERROR: epc=0x%lx is very low before return (pid=%d)\n",
-           p->trapframe->epc, p->pid);
-    printf("            Process sz=0x%lx, killing process\n", p->sz);
-    setkilled(p);
-    return;  // Don't return to invalid address
+    printf("prepare_return(): WARNING: epc=0x%lx is very low before return (pid=%d, sz=0x%lx)\n",
+           p->trapframe->epc, p->pid, p->sz);
+    // Don't kill - let it try to execute and see what happens
+    // The illegal instruction handler will catch it if it's truly invalid
   }
   if(p->trapframe->epc >= p->sz) {
     printf("prepare_return(): ERROR: epc=0x%lx >= process size 0x%lx (pid=%d)\n",
