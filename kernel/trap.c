@@ -130,9 +130,27 @@ usertrap(void)
     // Illegal instruction exception
     // This usually means the instruction pointer is pointing to invalid memory
     // or the instruction at that address is not valid
+    uint64 sepc = r_sepc();
+    uint64 stval = r_stval();
     printf("usertrap(): illegal instruction pid=%d\n", p->pid);
-    printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+    printf("            sepc=0x%lx stval=0x%lx\n", sepc, stval);
     printf("            instruction pointer may be corrupted or pointing to invalid memory\n");
+    
+    // Check if the page containing sepc is mapped
+    pte_t *pte = walk(p->pagetable, sepc, 0);
+    if(pte == 0) {
+      printf("            ERROR: Page table entry for sepc=0x%lx does not exist\n", sepc);
+    } else if((*pte & PTE_V) == 0) {
+      printf("            ERROR: Page at sepc=0x%lx is not valid (PTE_V=0)\n", sepc);
+    } else {
+      uint64 pa = PTE2PA(*pte);
+      uint flags = PTE_FLAGS(*pte);
+      printf("            Page is mapped: pa=0x%lx flags=0x%x\n", pa, flags);
+      if((flags & PTE_X) == 0) {
+        printf("            ERROR: Page is not executable (PTE_X=0)\n");
+      }
+    }
+    
     setkilled(p);
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
