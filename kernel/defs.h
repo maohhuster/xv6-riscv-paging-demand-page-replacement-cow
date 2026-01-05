@@ -59,6 +59,9 @@ void            ireclaim(int);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+void            krefinc(void *);
+int             krefdec(void *);
+int             krefget(void *);
 
 // log.c
 void            initlog(int, struct superblock*);
@@ -169,6 +172,7 @@ int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
 int             ismapped(pagetable_t, uint64);
 uint64          vmfault(pagetable_t, uint64, int);
+int             cowfault(pagetable_t, uint64);
 
 // plic.c
 void            plicinit(void);
@@ -180,6 +184,14 @@ void            plic_complete(int);
 void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
+
+// swap.c
+void            swapinit(void);
+int             swapout(pagetable_t, uint64);
+uint64          swapin(pagetable_t, uint64);
+int             select_victim_page(void);
+int             pte_to_swapblock(pte_t);
+void            swapfree(int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -68,9 +68,37 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else if((r_scause() == 15 || r_scause() == 13) &&
-            vmfault(p->pagetable, r_stval(), (r_scause() == 13)? 1 : 0) != 0) {
-    // page fault on lazily-allocated page
+  } else if(r_scause() == 15) {
+    // Store page fault - could be COW, swapped, or lazy allocation
+    uint64 va = r_stval();
+    pte_t *pte = walk(p->pagetable, va, 0);
+    if(pte != 0 && (*pte & PTE_SWAPPED) != 0) {
+      // This is a swapped page fault
+      if(swapin(p->pagetable, va) == 0) {
+        setkilled(p);
+      }
+    } else if(pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
+      // This is a COW page fault
+      if(cowfault(p->pagetable, va) != 0) {
+        setkilled(p);
+      }
+    } else if(vmfault(p->pagetable, va, 0) != 0) {
+      // Lazy allocation page fault
+      setkilled(p);
+    }
+  } else if(r_scause() == 13) {
+    // Load page fault - could be swapped or lazy allocation
+    uint64 va = r_stval();
+    pte_t *pte = walk(p->pagetable, va, 0);
+    if(pte != 0 && (*pte & PTE_SWAPPED) != 0) {
+      // This is a swapped page fault
+      if(swapin(p->pagetable, va) == 0) {
+        setkilled(p);
+      }
+    } else if(vmfault(p->pagetable, va, 1) != 0) {
+      // Lazy allocation page fault
+      setkilled(p);
+    }
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
