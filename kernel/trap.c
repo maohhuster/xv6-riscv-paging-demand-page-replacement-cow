@@ -108,18 +108,12 @@ usertrap(void)
         setkilled(p);
       }
     } else if(pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
-      // This is a COW page fault on load (shouldn't happen for read-only, but handle it)
-      // Actually, COW pages are read-only, so load should work. But if it doesn't, handle it.
-      // For now, treat as lazy allocation since COW should only trigger on write
-      uint64 pa = vmfault(p->pagetable, va, 1);
-      if(pa == 0) {
-        // Failed
-        setkilled(p);
-      } else {
-        // Success
-        memstats_inc_pagefault();
-        memstats_inc_lazyalloc();
-      }
+      // COW pages are read-only and should be readable
+      // If we get a load page fault on a COW page, something is wrong
+      // This shouldn't happen - COW pages should be readable
+      // Just kill the process as this indicates a serious error
+      printf("usertrap(): load page fault on COW page va=0x%lx pid=%d\n", va, p->pid);
+      setkilled(p);
     } else {
       // Lazy allocation page fault
       uint64 pa = vmfault(p->pagetable, va, 1);
@@ -132,6 +126,14 @@ usertrap(void)
         memstats_inc_lazyalloc();
       }
     }
+  } else if(r_scause() == 2) {
+    // Illegal instruction exception
+    // This usually means the instruction pointer is pointing to invalid memory
+    // or the instruction at that address is not valid
+    printf("usertrap(): illegal instruction pid=%d\n", p->pid);
+    printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+    printf("            instruction pointer may be corrupted or pointing to invalid memory\n");
+    setkilled(p);
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
