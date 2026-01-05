@@ -151,11 +151,21 @@ usertrap(void)
       } else {
         // Page is executable, but instruction is illegal - check what's at that address
         uint64 offset = sepc % PGSIZE;
-        uint64 *instr_ptr = (uint64 *)((char *)pa + offset);
-        printf("            Instruction at sepc: 0x%lx (offset=0x%lx in page)\n", 
+        // Read 32-bit instruction (RISC-V instructions are 32 bits)
+        uint32 *instr_ptr = (uint32 *)((char *)pa + offset);
+        printf("            Instruction at sepc: 0x%x (offset=0x%lx in page)\n", 
                *instr_ptr, offset);
         printf("            Process sz=0x%lx, epc in trapframe=0x%lx\n", 
                p->sz, p->trapframe->epc);
+        
+        // Check if epc is suspiciously low or outside process size
+        if(p->trapframe->epc < 0x100) {
+          printf("            ERROR: epc=0x%lx is very low (< 256 bytes)\n", p->trapframe->epc);
+        }
+        if(p->trapframe->epc >= p->sz) {
+          printf("            ERROR: epc=0x%lx is >= process size 0x%lx\n", 
+                 p->trapframe->epc, p->sz);
+        }
       }
     }
     
