@@ -67,6 +67,16 @@ usertrap(void)
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
     p->trapframe->epc += 4;
+    
+    // Validate epc after increment
+    if(p->trapframe->epc < 0x100) {
+      printf("usertrap(): ERROR: epc=0x%lx is very low after system call (pid=%d, sepc was 0x%lx)\n",
+             p->trapframe->epc, p->pid, sepc);
+    }
+    if(p->trapframe->epc >= p->sz) {
+      printf("usertrap(): ERROR: epc=0x%lx >= process size 0x%lx after system call (pid=%d)\n",
+             p->trapframe->epc, p->sz, p->pid);
+    }
 
     // an interrupt will change sepc, scause, and sstatus,
     // so enable only now that we're done with those registers.
