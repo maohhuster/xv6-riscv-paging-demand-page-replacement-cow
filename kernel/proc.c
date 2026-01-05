@@ -281,6 +281,12 @@ kfork(void)
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
+  
+  // Debug: Check if epc is suspiciously low
+  if(np->trapframe->epc < 0x1000) {
+    printf("kfork(): WARNING: child epc=0x%lx is very low (pid=%d, parent_pid=%d)\n", 
+           np->trapframe->epc, np->pid, p->pid);
+  }
 
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
